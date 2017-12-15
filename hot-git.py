@@ -16,26 +16,25 @@ def rawCommitToObject(commit):
 for file in files:
     rawCommits = git.log('--pretty=format:%H,%ad', '--date=short', '--follow', '--', file).split('\n')
     history[file] = list(map(rawCommitToObject, rawCommits))
-    break
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime
 
-commits = history['.gitignore']
-##commits = history['src/main/java/com/thomsonreuters/ask/model/Question.java']
+#commits = history['.gitignore']
+commits = history['src/main/java/com/thomsonreuters/ask/model/Question.java']
 commits.reverse()
 
 import pandas as pd
 dataframe = pd.DataFrame(commits)
 dataframe['timestamp'] = pd.to_datetime(dataframe['timestamp'])
-dataframe['today'] = pd.Series([pd.to_datetime('today')]*len(commits))
-dataframe['days'] = 1 - (dataframe['today'] - dataframe['timestamp']).dt.days
-print(dataframe)
 
-dates = dataframe['days']
-values = [1]*len(commits)
+dataframe.set_index(['timestamp'])
+aggregate = dataframe.groupby([pd.Grouper(key='timestamp', freq='W')], as_index=False).size().to_frame('count').reset_index()
+print(aggregate)
 
-plt.plot(dates, values, 'ro')
+dates = aggregate['timestamp']
+values = aggregate['count']
+plt.plot_date(dates, values, linestyle='solid', marker='None')
 plt.gcf().autofmt_xdate(rotation=25)
 plt.show()
